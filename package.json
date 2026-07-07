@@ -1,0 +1,30 @@
+{
+  "name": "donationbot",
+  "version": "1.0.0",
+  "description": "Discord Donation Logger",
+  "main": "index.js",
+  "scripts": {
+    "start": "node start.js",
+    "deploy": "node deploy-commands.js",
+    "test": "node --check start.js && node --check index.js && node --check deploy-commands.js && node --check commands/utility/ping.js && node --check commands/donate.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Hailey-Rose/DonationBot.git"
+  },
+  "author": "Hailey Rose",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/Hailey-Rose/DonationBot/issues"
+  },
+  "homepage": "https://github.com/Hailey-Rose/DonationBot#readme",
+  "dependencies": {
+    "discord.js": "^14.26.4"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.6.0",
+    "globals": "^17.7.0",
+    "prettier": "^3.9.4"
+  }
+}
