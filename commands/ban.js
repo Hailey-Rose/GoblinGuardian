@@ -1,6 +1,8 @@
 const {
     SlashCommandBuilder,
     PermissionsBitField,
+    EmbedBuilder,
+    MessageFlags
 } = require('discord.js');
 
 module.exports = {
@@ -26,7 +28,7 @@ module.exports = {
         const user = interaction.options.getUser('user');
         const reason = interaction.options.getString('reason');
 
-        // Moderator permission check
+
         if (!interaction.memberPermissions.has(PermissionsBitField.Flags.BanMembers)) {
             return interaction.reply({
                 content: 'You need the **Ban Members** permission to use this command.',
@@ -34,7 +36,6 @@ module.exports = {
             });
         }
 
-        // Don't ban yourself moron.
         if (interaction.user.id === user.id) {
             return interaction.reply({
                 content: "You can't ban yourself!",
@@ -42,12 +43,10 @@ module.exports = {
             });
         }
 
-        // Try to fetch the member (will be null if they've already left)
         const member = await interaction.guild.members
             .fetch(user.id)
             .catch(() => null);
 
-        // is member bannable?
         if (member && !member.bannable) {
             return interaction.reply({
                 content: "I can't ban that user. They may have a higher role than me or I lack permission.",
@@ -56,9 +55,20 @@ module.exports = {
         }
 
         try {
+            await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+            const ban_dm = new EmbedBuilder()
+                .setColor("#ff0000")
+                .setTitle("Ban")
+                .setDescription(`You have been banned from **The Alpha Sector** for: ${reason}`)
+            await user.send({ embeds: [ban_dm] })
+        }
+
+
+        finally {
+
             await interaction.guild.members.ban(user, { reason });
 
-            await interaction.reply({
+            await interaction.followUp({
                 content: `✅ Banned **${user.tag}**.\nReason: **${reason}**`,
             });
 
@@ -73,6 +83,8 @@ module.exports = {
                     `**Reason:** ${reason}`
                 );
             }
+        } try {
+
         } catch (err) {
             console.error(err);
 
