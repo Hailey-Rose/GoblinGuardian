@@ -4,6 +4,7 @@ const {
     EmbedBuilder,
     MessageFlags
 } = require('discord.js');
+const { guildName } = require('..//config.json');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -59,7 +60,7 @@ module.exports = {
             const kick_dm = new EmbedBuilder()
                 .setColor("#ff0000")
                 .setTitle("kick")
-                .setDescription(`You have been kicked from **The Alpha Sector** for: ${reason}`)
+                .setDescription(`You have been kicked from **${guildName}** | **Reason:** ${reason}`)
             await user.send({ embeds: [kick_dm] })
         }
 

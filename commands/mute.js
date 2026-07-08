@@ -5,6 +5,7 @@ const {
     MessageFlags
 } = require('discord.js');
 const ms = require('ms');
+const { guildName } = require('..//config.json');
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('mute')
@@ -35,7 +36,7 @@ module.exports = {
         const reason = interaction.options.getString('reason');
         const duration = interaction.options.getString('duration');
         const milliseconds = ms(duration);
-
+        const expiresAt = `<t:${Math.floor((interaction.createdTimestamp + milliseconds) / 1000)}:F>`;
         if (milliseconds >= 2147483647) {
             return interaction.reply({
                 content: "Max duration is 24d.",
@@ -63,10 +64,12 @@ module.exports = {
 
         try {
             await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+
             const mute_dm = new EmbedBuilder()
                 .setColor("#ff0000")
                 .setTitle("mute")
-                .setDescription(`You have been muted in **The Alpha Sector** Reason: ${reason} Duration: ${duration}`)
+                .setDescription(`You have been muted in **${guildName}** | **Reason:** ${reason} | **Duration:** ${duration} | **Expires:** ${expiresAt}`)
+                
             await user.send({ embeds: [mute_dm] })
         }
 
@@ -85,7 +88,7 @@ module.exports = {
             setTimeout(() => { user.roles.remove(mutedRole); }, milliseconds)
 
             await interaction.followUp({
-                content: `✅ Muted **${user}**.\nReason: **${reason}**. \nDuration: **${duration}**`,
+                content: `✅ Muted **${user}**.\nReason: **${reason}**. \nDuration: **${duration}**. \nExpires: **${expiresAt}**.`,
             });
 
             const logChannel = await interaction.client.channels
@@ -97,7 +100,8 @@ module.exports = {
                     `**Moderator:** ${interaction.user.tag}\n` +
                     `**Muted User:** ${user} (${user.id})\n` +
                     `**Reason:** ${reason}` +
-                    `   **Duration:** ${duration}`
+                    `   **Duration:** ${duration}` +
+                    `       **Expires:** ${expiresAt}`
                 );
             }
         } try {

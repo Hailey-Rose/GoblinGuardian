@@ -4,7 +4,7 @@ const {
     EmbedBuilder,
     MessageFlags
 } = require('discord.js');
-
+const { guildName } = require('..//config.json');
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('ban')
@@ -59,7 +59,7 @@ module.exports = {
             const ban_dm = new EmbedBuilder()
                 .setColor("#ff0000")
                 .setTitle("Ban")
-                .setDescription(`You have been banned from **The Alpha Sector** for: ${reason}`)
+                .setDescription(`You have been banned from **${guildName}** | **Reason:** ${reason}`)
             await user.send({ embeds: [ban_dm] })
         }
 

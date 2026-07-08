@@ -1,5 +1,6 @@
 {
 "token": "Bot Token Here",  
 "clientId": "Application ID Here",
-"guildId": "Server ID Here"
+"guildId": "Server ID Here",
+"guildName": "Server Name Here"
 }
