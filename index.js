@@ -5,7 +5,7 @@ const { Client, Collection, Events, GatewayIntentBits, MessageFlags } = require(
 const { token } = require('./config.json');
 
 // Create a new client instance
-const client = new Client({ intents: [GatewayIntentBits.Guilds] });
+const client = new Client({ intents: [GatewayIntentBits.Guilds,  GatewayIntentBits.MessageContent,  GatewayIntentBits.GuildMessages] });
 client.commands = new Collection();
 client.once(Events.ClientReady, (readyClient) => {
 	console.log(`Ready! Logged in as ${readyClient.user.tag}`);
@@ -16,6 +16,7 @@ client.once(Events.ClientReady, (readyClient) => {
 const foldersPath = path.join(__dirname, 'commands');
 const commandFiles = getCommandFiles(foldersPath);
 
+
 function getCommandFiles(directory) {
 	return fs.readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
 		const entryPath = path.join(directory, entry.name);
@@ -24,6 +25,18 @@ function getCommandFiles(directory) {
 
 		return entry.isFile() && entry.name.endsWith('.js') ? [entryPath] : [];
 	});
+
+const logfoldersPath = path.join(__dirname, 'logs');
+const logFiles = getLogFiles(logfoldersPath);
+function getLogFiles(directory) {
+	return fs.readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
+		const entryPath = path.join(directory, entry.name);
+
+		if (entry.isDirectory()) return getLogFiles(entryPath);
+
+		return entry.isFile() && entry.name.endsWith('.js') ? [entryPath] : [];
+	});
+
 }
 
 for (const filePath of commandFiles) {
@@ -66,4 +79,4 @@ client.on(Events.InteractionCreate, async (interaction) => {
 });
 
 client.login(token);
-
+}
