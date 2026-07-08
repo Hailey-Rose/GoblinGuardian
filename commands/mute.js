@@ -1,120 +1,139 @@
 const {
-    SlashCommandBuilder,
-    PermissionsBitField,
-    EmbedBuilder,
-    MessageFlags
+	SlashCommandBuilder,
+	PermissionFlagsBits,
+	PermissionsBitField,
+	EmbedBuilder,
+	MessageFlags,
 } = require('discord.js');
 const ms = require('ms');
-const { guildName } = require('..//config.json');
+const { guildName, modLogs, mutedRole: mutedRoleId } = require('../config.json');
+const { addMute } = require('../utils/mutes');
+
+const MAX_MUTE_MS = 24 * 24 * 60 * 60 * 1000;
+
 module.exports = {
-    data: new SlashCommandBuilder()
-        .setName('mute')
-        .setDescription('Mutes a user in the server for a specified time.')
-        .addUserOption(option =>
-            option
-                .setName('user')
-                .setDescription('The user to mute.')
-                .setRequired(true)
-        )
-        .addStringOption(option =>
-            option
-                .setName('reason')
-                .setDescription('Reason for muting the user.')
-                .setRequired(true)
-        )
-        .addStringOption(option =>
-            option
-                .setName('duration')
-                .setDescription('Examples: 30s, 5m, 2h, 1d - Max Duration: 24d')
-                .setRequired(true)
-        ),
+	data: new SlashCommandBuilder()
+		.setName('mute')
+		.setDescription('Mutes a user in the server for a specified time.')
+		.setDefaultMemberPermissions(PermissionFlagsBits.ManageRoles)
+		.addUserOption((option) =>
+			option
+				.setName('user')
+				.setDescription('The user to mute.')
+				.setRequired(true),
+		)
+		.addStringOption((option) =>
+			option
+				.setName('reason')
+				.setDescription('Reason for muting the user.')
+				.setRequired(true),
+		)
+		.addStringOption((option) =>
+			option
+				.setName('duration')
+				.setDescription('Examples: 30s, 5m, 2h, 1d - Max Duration: 24d')
+				.setRequired(true),
+		),
 
-    async execute(interaction) {
-        if (!interaction.isChatInputCommand()) return;
-        const mutedRole = interaction.guild.roles.cache.get('1418093549697765497');
-        const user = interaction.options.getMember('user');
-        const reason = interaction.options.getString('reason');
-        const duration = interaction.options.getString('duration');
-        const milliseconds = ms(duration);
-        const expiresAt = `<t:${Math.floor((interaction.createdTimestamp + milliseconds) / 1000)}:F>`;
-        if (milliseconds >= 2147483647) {
-            return interaction.reply({
-                content: "Max duration is 24d.",
-                ephemeral: true,
-            });
-        }
+	async execute(interaction) {
+		if (!interaction.isChatInputCommand()) return;
 
-        if (!interaction.memberPermissions.has(PermissionsBitField.Flags.ManageRoles)) {
-            return interaction.reply({
-                content: 'You need the **Manage Roles** permission to use this command.',
-                ephemeral: true,
-            });
-        }
+		const member = interaction.options.getMember('user');
+		const reason = interaction.options.getString('reason');
+		const duration = interaction.options.getString('duration');
+		const milliseconds = ms(duration);
 
-        if (interaction.user.id === user.id) {
-            return interaction.reply({
-                content: "You can't mute yourself!",
-                ephemeral: true,
-            });
-        }
+		if (!Number.isFinite(milliseconds) || milliseconds < 1000 || milliseconds > MAX_MUTE_MS) {
+			return interaction.reply({
+				content: 'Please provide a valid duration from 1s to 24d (e.g. 30s, 5m, 2h).',
+				flags: MessageFlags.Ephemeral,
+			});
+		}
 
-        const member = await interaction.guild.members
-            .fetch(user.id)
-            .catch(() => null);
+		if (!member) {
+			return interaction.reply({
+				content: 'That user is not in this server.',
+				flags: MessageFlags.Ephemeral,
+			});
+		}
 
-        try {
-            await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+		if (!interaction.memberPermissions.has(PermissionsBitField.Flags.ManageRoles)) {
+			return interaction.reply({
+				content: 'You need the **Manage Roles** permission to use this command.',
+				flags: MessageFlags.Ephemeral,
+			});
+		}
 
-            const mute_dm = new EmbedBuilder()
-                .setColor("#ff0000")
-                .setTitle("Mute")
-                .setDescription(`You have been muted in **${guildName}** | **Reason:** ${reason} | **Duration:** ${duration} | **Expires:** ${expiresAt}`)
-                
-            await user.send({ embeds: [mute_dm] })
-        }
+		if (!interaction.appPermissions?.has(PermissionsBitField.Flags.ManageRoles)) {
+			return interaction.reply({
+				content: 'I need the **Manage Roles** permission to do that.',
+				flags: MessageFlags.Ephemeral,
+			});
+		}
 
+		if (interaction.user.id === member.id) {
+			return interaction.reply({
+				content: "You can't mute yourself!",
+				flags: MessageFlags.Ephemeral,
+			});
+		}
 
-        finally {
+		const mutedRole = await interaction.guild.roles.fetch(mutedRoleId).catch(() => null);
+		const botMember = interaction.guild.members.me;
 
-            await user.roles.add(mutedRole);
+		if (!mutedRole) {
+			return interaction.reply({
+				content: 'Muted role was not found.',
+				flags: MessageFlags.Ephemeral,
+			});
+		}
 
-            if (!milliseconds || milliseconds < 1000) {
-                return interaction.reply({
-                    content: 'Please provide a valid duration (e.g. 30s, 5m, 2h).',
-                    ephemeral: true
-                });
-            }
+		if (!botMember || mutedRole.position >= botMember.roles.highest.position) {
+			return interaction.reply({
+				content: 'My highest role must be above the muted role.',
+				flags: MessageFlags.Ephemeral,
+			});
+		}
 
-            setTimeout(() => { user.roles.remove(mutedRole); }, milliseconds)
+		if (!member.manageable) {
+			return interaction.reply({
+				content: "I can't mute that user. They may have a higher role than me.",
+				flags: MessageFlags.Ephemeral,
+			});
+		}
 
-            await interaction.followUp({
-                content: `✅ Muted **${user}**.\nReason: **${reason}**. \nDuration: **${duration}**. \nExpires: **${expiresAt}**.`,
-            });
+		await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
-            const logChannel = await interaction.client.channels
-                .fetch('1417724798217228308')
-                .catch(() => null);
+		const expiresAtMs = Date.now() + milliseconds;
+		const expiresAt = `<t:${Math.floor(expiresAtMs / 1000)}:F>`;
+		const muteDm = new EmbedBuilder()
+			.setColor('#ff0000')
+			.setTitle('Mute')
+			.setDescription(`You have been muted in **${guildName}** | **Reason:** ${reason} | **Duration:** ${duration} | **Expires:** ${expiresAt}`);
 
-            if (logChannel) {
-                await logChannel.send(
-                    `**Moderator:** ${interaction.user.tag}\n` +
-                    `**Muted User:** ${user} (${user.id})\n` +
-                    `**Reason:** ${reason}` +
-                    `   **Duration:** ${duration}` +
-                    `       **Expires:** ${expiresAt}`
-                );
-            }
-        } try {
+		const dmSent = await member.user.send({ embeds: [muteDm] }).then(() => true).catch(() => false);
+		await member.roles.add(mutedRole, reason);
+		await addMute(interaction.client, {
+			guildId: interaction.guild.id,
+			userId: member.id,
+			roleId: mutedRole.id,
+			expiresAt: expiresAtMs,
+			reason,
+		});
 
-        } catch (err) {
-            console.error(err);
+		await interaction.followUp({
+			content: `✅ Muted **${member.user.tag}**.\nReason: **${reason}**.\nDuration: **${duration}**.\nExpires: **${expiresAt}**.${dmSent ? '' : '\n⚠️ I could not DM this user.'}`,
+		});
 
-            if (!interaction.replied) {
-                return interaction.reply({
-                    content: 'I could not mute that user.',
-                    ephemeral: true,
-                });
-            }
-        }
-    }
-}
+		const logChannel = await interaction.client.channels.fetch(modLogs).catch(() => null);
+		if (logChannel?.isTextBased()) {
+			await logChannel.send(
+				`**Moderator:** ${interaction.user.tag}\n` +
+				`**Muted User:** ${member.user.tag} (${member.id})\n` +
+				`**Reason:** ${reason}\n` +
+				`**Duration:** ${duration}\n` +
+				`**Expires:** ${expiresAt}`,
+			);
+		}
+	},
+};

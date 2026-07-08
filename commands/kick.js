@@ -1,100 +1,94 @@
 const {
-    SlashCommandBuilder,
-    PermissionsBitField,
-    EmbedBuilder,
-    MessageFlags
+	SlashCommandBuilder,
+	PermissionFlagsBits,
+	PermissionsBitField,
+	EmbedBuilder,
+	MessageFlags,
 } = require('discord.js');
-const { guildName } = require('..//config.json');
+const { guildName, modLogs } = require('../config.json');
 
 module.exports = {
-    data: new SlashCommandBuilder()
-        .setName('kick')
-        .setDescription('kicks a user from the server.')
-        .addUserOption(option =>
-            option
-                .setName('user')
-                .setDescription('The user to kick.')
-                .setRequired(true)
-        )
-        .addStringOption(option =>
-            option
-                .setName('reason')
-                .setDescription('Reason for kicking the user.')
-                .setRequired(true)
-        ),
+	data: new SlashCommandBuilder()
+		.setName('kick')
+		.setDescription('Kicks a user from the server.')
+		.setDefaultMemberPermissions(PermissionFlagsBits.KickMembers)
+		.addUserOption((option) =>
+			option
+				.setName('user')
+				.setDescription('The user to kick.')
+				.setRequired(true),
+		)
+		.addStringOption((option) =>
+			option
+				.setName('reason')
+				.setDescription('Reason for kicking the user.')
+				.setRequired(true),
+		),
 
-    async execute(interaction) {
-        if (!interaction.isChatInputCommand()) return;
+	async execute(interaction) {
+		if (!interaction.isChatInputCommand()) return;
 
-        const user = interaction.options.getUser('user');
-        const reason = interaction.options.getString('reason');
+		const user = interaction.options.getUser('user');
+		const reason = interaction.options.getString('reason');
 
+		if (!interaction.memberPermissions.has(PermissionsBitField.Flags.KickMembers)) {
+			return interaction.reply({
+				content: 'You need the **Kick Members** permission to use this command.',
+				flags: MessageFlags.Ephemeral,
+			});
+		}
 
-        if (!interaction.memberPermissions.has(PermissionsBitField.Flags.KickMembers)) {
-            return interaction.reply({
-                content: 'You need the **Kick, Approve and Reject Members** permission to use this command.',
-                ephemeral: true,
-            });
-        }
+		if (!interaction.appPermissions?.has(PermissionsBitField.Flags.KickMembers)) {
+			return interaction.reply({
+				content: 'I need the **Kick Members** permission to do that.',
+				flags: MessageFlags.Ephemeral,
+			});
+		}
 
-        if (interaction.user.id === user.id) {
-            return interaction.reply({
-                content: "You can't kick yourself!",
-                ephemeral: true,
-            });
-        }
+		if (interaction.user.id === user.id) {
+			return interaction.reply({
+				content: "You can't kick yourself!",
+				flags: MessageFlags.Ephemeral,
+			});
+		}
 
-        const member = await interaction.guild.members
-            .fetch(user.id)
-            .catch(() => null);
+		const member = await interaction.guild.members.fetch(user.id).catch(() => null);
 
-        if (member && !member.kickable) {
-            return interaction.reply({
-                content: "I can't kick that user. They may have a higher role than me or I lack permission.",
-                ephemeral: true,
-            });
-        }
+		if (!member) {
+			return interaction.reply({
+				content: 'That user is not in this server.',
+				flags: MessageFlags.Ephemeral,
+			});
+		}
 
-        try {
-            await interaction.deferReply({ flags: MessageFlags.Ephemeral });
-            const kick_dm = new EmbedBuilder()
-                .setColor("#ff0000")
-                .setTitle("Kick")
-                .setDescription(`You have been kicked from **${guildName}** | **Reason:** ${reason}`)
-            await user.send({ embeds: [kick_dm] })
-        }
+		if (!member.kickable) {
+			return interaction.reply({
+				content: "I can't kick that user. They may have a higher role than me or I lack permission.",
+				flags: MessageFlags.Ephemeral,
+			});
+		}
 
+		await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
-        finally {
+		const kickDm = new EmbedBuilder()
+			.setColor('#ff0000')
+			.setTitle('Kick')
+			.setDescription(`You have been kicked from **${guildName}** | **Reason:** ${reason}`);
 
-            await interaction.guild.members.kick(user, { reason });
+		const dmSent = await user.send({ embeds: [kickDm] }).then(() => true).catch(() => false);
+		await member.kick(reason);
 
-            await interaction.followUp({
-                content: `✅ Kicked **${user.tag}**.\nReason: **${reason}**`,
-            });
+		await interaction.followUp({
+			content: `✅ Kicked **${user.tag}**.\nReason: **${reason}**${dmSent ? '' : '\n⚠️ I could not DM this user.'}`,
+		});
 
-            const logChannel = await interaction.client.channels
-                .fetch('1417724798217228308')
-                .catch(() => null);
-
-            if (logChannel) {
-                await logChannel.send(
-                    `**Moderator:** ${interaction.user.tag}\n` +
-                    `**Kicked User:** ${user.tag} (${user.id})\n` +
-                    `**Reason:** ${reason}`
-                );
-            }
-        } try {
-
-        } catch (err) {
-            console.error(err);
-
-            if (!interaction.replied) {
-                return interaction.reply({
-                    content: 'I could not kick that user.',
-                    ephemeral: true,
-                });
-            }
-        }
-    },
+		const logChannel = await interaction.client.channels.fetch(modLogs).catch(() => null);
+		if (logChannel?.isTextBased()) {
+			await logChannel.send(
+				`**Moderator:** ${interaction.user.tag}\n` +
+				`**Kicked User:** ${user.tag} (${user.id})\n` +
+				`**Reason:** ${reason}`,
+			);
+		}
+	},
 };

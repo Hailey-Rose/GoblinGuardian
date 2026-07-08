@@ -1,43 +1,46 @@
 // Require the necessary discord.js classes
 const fs = require('node:fs');
 const path = require('node:path');
-const { Client, Collection, Events, GatewayIntentBits, MessageFlags } = require('discord.js');
+const {
+	Client,
+	Collection,
+	Events,
+	GatewayIntentBits,
+	MessageFlags,
+	Partials,
+} = require('discord.js');
 const { token } = require('./config.json');
+const { restoreMutes } = require('./utils/mutes');
 
 // Create a new client instance
-const client = new Client({ intents: [GatewayIntentBits.Guilds,  GatewayIntentBits.MessageContent,  GatewayIntentBits.GuildMessages] });
-client.commands = new Collection();
-client.once(Events.ClientReady, (readyClient) => {
-	console.log(`Ready! Logged in as ${readyClient.user.tag}`);
-
-	
+const client = new Client({
+	intents: [
+		GatewayIntentBits.Guilds,
+		GatewayIntentBits.GuildMembers,
+		GatewayIntentBits.GuildMessages,
+		GatewayIntentBits.MessageContent,
+	],
+	partials: [Partials.Message, Partials.Channel, Partials.User],
 });
 
-const foldersPath = path.join(__dirname, 'commands');
-const commandFiles = getCommandFiles(foldersPath);
+client.commands = new Collection();
 
+client.once(Events.ClientReady, (readyClient) => {
+	console.log(`Ready! Logged in as ${readyClient.user.tag}`);
+	void restoreMutes(client).catch((error) => console.error('Failed to restore mutes:', error));
+});
 
-function getCommandFiles(directory) {
+function getJavaScriptFiles(directory) {
 	return fs.readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
 		const entryPath = path.join(directory, entry.name);
 
-		if (entry.isDirectory()) return getCommandFiles(entryPath);
+		if (entry.isDirectory()) return getJavaScriptFiles(entryPath);
 
 		return entry.isFile() && entry.name.endsWith('.js') ? [entryPath] : [];
 	});
-
-const logfoldersPath = path.join(__dirname, 'logs');
-const logFiles = getLogFiles(logfoldersPath);
-function getLogFiles(directory) {
-	return fs.readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
-		const entryPath = path.join(directory, entry.name);
-
-		if (entry.isDirectory()) return getLogFiles(entryPath);
-
-		return entry.isFile() && entry.name.endsWith('.js') ? [entryPath] : [];
-	});
-
 }
+
+const commandFiles = getJavaScriptFiles(path.join(__dirname, 'commands'));
 
 for (const filePath of commandFiles) {
 	const command = require(filePath);
@@ -49,6 +52,21 @@ for (const filePath of commandFiles) {
 }
 
 console.log(`Loaded ${client.commands.size} command(s): ${client.commands.map((command) => `/${command.data.name}`).join(', ') || 'none'}`);
+
+const eventFiles = getJavaScriptFiles(path.join(__dirname, 'events'));
+
+for (const filePath of eventFiles) {
+	const event = require(filePath);
+	if ('name' in event && 'execute' in event) {
+		const listener = (...args) => event.execute(...args, client);
+		if (event.once) client.once(event.name, listener);
+		else client.on(event.name, listener);
+	} else {
+		console.log(`[WARNING] The event at ${filePath} is missing a required "name" or "execute" property.`);
+	}
+}
+
+console.log(`Loaded ${eventFiles.length} event(s).`);
 
 client.on(Events.InteractionCreate, async (interaction) => {
 	if (!interaction.isChatInputCommand()) return;
@@ -79,4 +97,3 @@ client.on(Events.InteractionCreate, async (interaction) => {
 });
 
 client.login(token);
-}
