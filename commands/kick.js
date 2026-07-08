@@ -59,7 +59,7 @@ module.exports = {
             await interaction.deferReply({ flags: MessageFlags.Ephemeral });
             const kick_dm = new EmbedBuilder()
                 .setColor("#ff0000")
-                .setTitle("kick")
+                .setTitle("Kick")
                 .setDescription(`You have been kicked from **${guildName}** | **Reason:** ${reason}`)
             await user.send({ embeds: [kick_dm] })
         }

@@ -67,7 +67,7 @@ module.exports = {
 
             const mute_dm = new EmbedBuilder()
                 .setColor("#ff0000")
-                .setTitle("mute")
+                .setTitle("Mute")
                 .setDescription(`You have been muted in **${guildName}** | **Reason:** ${reason} | **Duration:** ${duration} | **Expires:** ${expiresAt}`)
                 
             await user.send({ embeds: [mute_dm] })
