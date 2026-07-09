@@ -1,12 +1,12 @@
 {
-  "name": "donationbot",
+  "name": "Goblin Guardian",
   "version": "1.0.0",
-  "description": "Discord Donation Logger",
+  "description": "Discord Moderation Bot",
   "main": "index.js",
   "scripts": {
     "start": "node start.js",
     "deploy": "node deploy-commands.js",
-    "test": "node --check start.js && node --check index.js && node --check deploy-commands.js && node --check events/deletemsglog.js && node --check events/muterolecleanup.js && node --check utils/mutes.js && node --check commands/utility/ping.js && node --check commands/ban.js && node --check commands/kick.js && node --check commands/mute.js"
+    "test": "node --check start.js && node --check index.js && node --check deploy-commands.js && node --check events/deletemsglog.js && node --check events/muterolecleanup.js && node --check events/rolechangelog.js && node --check utils/mutes.js && node --check commands/utility/ping.js && node --check commands/ban.js && node --check commands/kick.js && node --check commands/mute.js"
   },
   "repository": {
     "type": "git",

@@ -5,6 +5,7 @@ const {
 	Client,
 	Collection,
 	Events,
+	AuditLogEvent,
 	GatewayIntentBits,
 	MessageFlags,
 	Partials,
