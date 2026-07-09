@@ -4,6 +4,7 @@ const {
 	PermissionsBitField,
 	EmbedBuilder,
 	MessageFlags,
+	Message,
 } = require('discord.js');
 const { guildName, modLogs } = require('../config.json');
 
@@ -69,8 +70,8 @@ module.exports = {
 			.setDescription(`You have been banned from **${guildName}** | **Reason:** ${reason}`);
 
 		const dmSent = await user.send({ embeds: [banDm] }).then(() => true).catch(() => false);
-		await interaction.guild.members.ban(user, { reason });
-
+		await interaction.guild.members.ban(user, {deleteMessageSeconds: 60 * 60 * 24 * 7}, { reason });
+		
 		await interaction.followUp({
 			content: `✅ Banned **${user.tag}**.\nReason: **${reason}**${dmSent ? '' : '\n⚠️ I could not DM this user.'}`,
 		});

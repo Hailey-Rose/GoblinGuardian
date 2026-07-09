@@ -29,7 +29,7 @@ module.exports = {
             .setTitle('Role(s) added/Removed')
             .setDescription(`Role(s) updated ${updateTime}`)
             .addFields(
-                { name: 'User', value: `${oldMember.displayName}`},
+                { name: 'User', value: `${oldMember.user} || ${oldMember.displayName}`},
                 { name: 'Added Roles', value: `${addedRoles.map(r => r.name)}` },
                 { name: 'Removed Roles', value: `${removedRoles.map(r => r.name)}` },
             );
