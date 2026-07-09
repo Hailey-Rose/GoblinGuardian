@@ -1,9 +1,6 @@
 const { AuditLogEvent, Events, EmbedBuilder } = require('discord.js');
 const { modLogs } = require('../config.json');
-// const { addedRoles } = require('../index.js');
-// const { removedRoles } = require('../index.js');
-// const { oldMember } = require('../index.js');
-// const { newMember} = require('../index.js');
+
 module.exports = {
     name: Events.GuildMemberUpdate,
     async execute(oldMember, newMember) {
@@ -33,21 +30,6 @@ module.exports = {
                 { name: 'Added Roles', value: `${addedRoles.map(r => r.name)}` },
                 { name: 'Removed Roles', value: `${removedRoles.map(r => r.name)}` },
             );
-
-    
-
-        
-        // console.log("Added:", addedRoles.map(r => r.name));
-        // sendChannel.send({ embeds: [updated]})
-        
-
-
-        // console.log("Removed:", removedRoles.map(r => r.name));
-        // sendChannel.send({ embeds: [updated]})
-            
-        // if (!message.guild || message.author?.bot) return;
-
-
 
         if (!sendChannel?.isTextBased()) return;
 
