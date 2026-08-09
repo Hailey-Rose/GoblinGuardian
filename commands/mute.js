@@ -6,7 +6,7 @@ const {
 	MessageFlags,
 } = require('discord.js');
 const ms = require('ms');
-const { guildName, modLogs, mutedRole: mutedRoleId } = require('../config.json');
+const { modLogs, mutedRole: mutedRoleId } = require('../config.json');
 const { addMute } = require('../utils/mutes');
 
 const MAX_MUTE_MS = 24 * 24 * 60 * 60 * 1000;
@@ -42,7 +42,7 @@ module.exports = {
 		const reason = interaction.options.getString('reason');
 		const duration = interaction.options.getString('duration');
 		const milliseconds = ms(duration);
-
+		const guildName = await interaction.guild.name
 		if (!Number.isFinite(milliseconds) || milliseconds < 1000 || milliseconds > MAX_MUTE_MS) {
 			return interaction.reply({
 				content: 'Please provide a valid duration from 1s to 24d (e.g. 30s, 5m, 2h).',

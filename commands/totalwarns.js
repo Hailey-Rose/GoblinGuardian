@@ -22,14 +22,20 @@ module.exports = {
     async execute(interaction) {
         const user =  interaction.options.getUser('user');
         const member = await interaction.guild.members.fetch(user.id).catch(() => null);
+		const guild = await interaction.guildId;
         const filePath = 'warns.json';
         const users = await getdata(filePath);
-        if (!users[member]) {
+        if (!users[guild]) {
             	return interaction.reply({
 				content: 'This user has **Zero** warnings.',
         })
         }
+		if (users[guild] !== users[guild]) {
+				return interaction.reply({
+				content: 'This user has **Zero** warnings.',
+		})
+		}
         await savedata(filePath, users);
-		await interaction.reply(`${user} has been warned: ${users[member].totalWarns.toLocaleString()} times. || Reason(s): ${users[member].reasons.toLocaleString()} `); 
+		await interaction.reply(`${user} has been warned: ${users[guild].totalWarns.toLocaleString()} times. || Reason(s): ${users[guild].reasons.toLocaleString()} `); 
     }
 }

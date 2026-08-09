@@ -6,7 +6,7 @@ const {
 	MessageFlags,
 	Message,
 } = require('discord.js');
-const { guildName, modLogs } = require('../config.json');
+const { modLogs } = require('../config.json');
 
 module.exports = {
 	data: new SlashCommandBuilder()
@@ -31,7 +31,7 @@ module.exports = {
 
 		const user = interaction.options.getUser('user');
 		const reason = interaction.options.getString('reason');
-
+		const guildName = await interaction.guild.name
 		if (!interaction.memberPermissions.has(PermissionsBitField.Flags.BanMembers)) {
 			return interaction.reply({
 				content: 'You need the **Ban Members** permission to use this command.',
