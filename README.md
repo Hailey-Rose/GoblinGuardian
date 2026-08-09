@@ -13,7 +13,6 @@ Invite it to your server.
 Rename exampleconfig.json to config.json , and add the needed info shown in the example file. 
 create a warns.json file 
 install nodeJs / npm install (check specific requirements for your system)
-open the folder in your terminal
-do `npm start` 
+open the folder in your terminal, and run `npm start` 
 
 Happy days!
