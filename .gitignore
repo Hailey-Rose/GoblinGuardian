@@ -3,3 +3,4 @@ config.json
 data/mutes.json
 package-lock.json
 donations.json
+warns.json
