@@ -32,6 +32,7 @@ module.exports = {
 		const member = await interaction.guild.members.fetch(user.id).catch(() => null);
         const reason = interaction.options.getString('reason');
 		const guild = await interaction.guildId;
+		const guildName = await interaction.guild.name;
         const filePath = 'warns.json';
         const users = await getdata(filePath);
 
@@ -64,7 +65,7 @@ module.exports = {
 			};
 		}
         else {
-            users[user].reasons = users[user].reasons + ', ' + reason;
+            users[guild].reasons = users[guild].reasons + ', ' + reason;
         }
         users[guild].totalWarns += (1);
         users[guild].updatedAt = Date.now();

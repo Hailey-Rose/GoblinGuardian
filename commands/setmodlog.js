@@ -10,32 +10,17 @@ const { getdata, savedata } = require('../utils/json.js');
 
 module.exports = {
     data: new SlashCommandBuilder()
-		.setName('setup')
-		.setDescription('Set up Goblin Guardian for your server.')
+		.setName('setmodlog')
+		.setDescription('Set a mod log channel for Goblin Guardian.')
 		.setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild)
 		.addStringOption((option) =>
 			option
 				.setName('modlog')
 				.setDescription('Channel ID of where to send mod logs.')
-				.setRequired(false),
-		)
-		.addStringOption((option) =>
-			option
-				.setName('msglog')
-				.setDescription('Channel ID of where to send message logs.')
-				.setRequired(false),
-		)
-        .addStringOption((option) =>
-            option
-                .setName('mutedrole')
-                .setDescription('Role Id for server muted role.')
-                .setRequired(false),
-
+				.setRequired(true),
         ),
     async execute(interaction) {
         const modLogs = interaction.options.getString('modlog');
-        const msgLogs = interaction.options.getString('msglog')
-        const mutedRole = interaction.options.getString('mutedrole')
 		const guild = await interaction.guildId;
 		const guildName = await interaction.guild.name
         const filePath = 'setupids.json';
@@ -45,8 +30,6 @@ module.exports = {
         if (!users[guild]) {
             users[guild] = {
                 modLogs: modLogs,
-                msgLogs: msgLogs,
-                mutedRole: mutedRole,
 				guildName: guildName,
 				guildId: interaction.guildId,
 
@@ -58,8 +41,6 @@ module.exports = {
 		if ([server] !== users[guild].guildId) {
             users[guild] = {
                 modLogs: modLogs,
-                msgLogs: msgLogs,
-                mutedRole: mutedRole,
 				guildName: guildName,
 				guildId: interaction.guildId,
 
@@ -67,7 +48,7 @@ module.exports = {
 		}
 		else {
 			await interaction.reply({
-				content: 'There was an error setting up the bot!',
+				content: 'There was an error setting up the mod log!',
 				flags: MessageFlags.Ephemeral,
 			});
 		
