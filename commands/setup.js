@@ -41,7 +41,7 @@ module.exports = {
         const filePath = 'setupids.json';
         const users = await getdata(filePath);
 
-
+		await interaction.deferReply({ flags: MessageFlags.Ephemeral });
         if (!users[guild]) {
             users[guild] = {
                 modLogs: modLogs,
@@ -72,6 +72,11 @@ module.exports = {
 			});
 		
 		}
+		await savedata(filePath, users);
+		
+		await interaction.followUp({
+			content: `✅ setup ID success.`,
+		});
     }
     }
     
