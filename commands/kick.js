@@ -5,7 +5,7 @@ const {
 	EmbedBuilder,
 	MessageFlags,
 } = require('discord.js');
-const { modLogs } = require('../config.json');
+const { getGuildChannel, getGuildSetup } = require('../utils/guildsetup');
 
 module.exports = {
 	data: new SlashCommandBuilder()
@@ -22,15 +22,24 @@ module.exports = {
 			option
 				.setName('reason')
 				.setDescription('Reason for kicking the user.')
+				.setMinLength(1)
+				.setMaxLength(500)
 				.setRequired(true),
 		),
 
 	async execute(interaction) {
 		if (!interaction.isChatInputCommand()) return;
 
+
+		if (!interaction.guildId || !interaction.guild) {
+			return interaction.reply({
+				content: 'This command can only be used in a server.',
+				flags: MessageFlags.Ephemeral,
+			});
+		}
+		const guildName = interaction.guild.name;
 		const user = interaction.options.getUser('user');
 		const reason = interaction.options.getString('reason');
-		const guildName = await interaction.guild.name
 		if (!interaction.memberPermissions.has(PermissionsBitField.Flags.KickMembers)) {
 			return interaction.reply({
 				content: 'You need the **Kick Members** permission to use this command.',
@@ -68,6 +77,17 @@ module.exports = {
 			});
 		}
 
+		let setup;
+		try {
+			setup = await getGuildSetup(interaction.guildId);
+		} catch (error) {
+			console.error('Failed to read guild setup:', error);
+			return interaction.reply({
+				content: 'There was an error reading this server\'s setup.',
+				flags: MessageFlags.Ephemeral,
+			});
+		}
+
 		await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
 		const kickDm = new EmbedBuilder()
@@ -82,13 +102,17 @@ module.exports = {
 			content: `✅ Kicked **${user.tag}**.\nReason: **${reason}**${dmSent ? '' : '\n⚠️ I could not DM this user.'}`,
 		});
 
-		const logChannel = await interaction.client.channels.fetch(modLogs).catch(() => null);
-		if (logChannel?.isTextBased()) {
-			await logChannel.send(
-				`**Moderator:** ${interaction.user.tag}\n` +
-				`**Kicked User:** ${user.tag} (${user.id})\n` +
-				`**Reason:** ${reason}`,
-			);
+		const logChannel = await getGuildChannel(interaction.guild, setup?.modLogs);
+		if (logChannel) {
+			try {
+				await logChannel.send(
+					`**Moderator:** ${interaction.user.tag}\n` +
+					`**Kicked User:** ${user.tag} (${user.id})\n` +
+					`**Reason:** ${reason}`,
+				);
+			} catch (error) {
+				console.error('Failed to send kick log:', error);
+			}
 		}
 	},
 };

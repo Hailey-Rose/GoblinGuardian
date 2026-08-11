@@ -1,37 +1,28 @@
-const { AuditLogEvent, Events, EmbedBuilder, GuildMember } = require('discord.js');
-const { genLogs } = require('../config.json');
-const ms = require('ms');
+const { Events, EmbedBuilder } = require('discord.js');
+const { getGuildChannel, getGuildSetup } = require('../utils/guildsetup');
 
 module.exports = {
-    name: Events.GuildMemberAdd,
-    async execute(GuildMemberAdd, Member) {
+	name: Events.GuildMemberAdd,
+	async execute(member) {
+		const setup = await getGuildSetup(member.guild.id).catch((error) => {
+			console.error('Failed to read guild setup:', error);
+			return null;
+		});
+		const sendChannel = await getGuildChannel(member.guild, setup?.genLogs);
+		if (!sendChannel) return;
 
-        const sendChannel = await GuildMemberAdd.guild.channels.fetch(genLogs).catch((error) => {
-            console.error(`Failed to fetch General log channel ${genLogs}:`, error);
-            return null;
-        });
+		const updateTime = `<t:${Math.floor(Date.now() / 1000)}:R>`;
+		const embed = new EmbedBuilder()
+			.setColor('Blue')
+			.setTitle('Member Joined')
+			.setDescription(`Member joined ${updateTime} || Account created: ${member.user.createdAt}`)
+			.addFields(
+				{ name: 'User', value: `${member.user} || ${member.user.tag}` },
+				{ name: 'User ID', value: member.id },
+			);
 
-        const updateTime = `<t:${Math.floor(Date.now() / 1000)}:R>`;
-        
-        const memberJoined = GuildMemberAdd;
-
-        const userId = `${GuildMemberAdd.id}`;
-
-        const CreatedAt = GuildMemberAdd.user.createdAt;       
-
-        const joined = new EmbedBuilder()
-            .setColor('Blue')
-            .setTitle('Member Joined')
-            .setDescription(`Member Joined ${updateTime} || Account Created: ${CreatedAt}`)
-            .addFields(
-                { name: 'User', value: `${GuildMemberAdd.user} || ${GuildMemberAdd.user.tag}`},
-                { name: 'User Id:', value: `${GuildMemberAdd.id}`}, );
-
-        if (!sendChannel?.isTextBased()) return;
-
-        await sendChannel.send({ embeds: [joined] });
-
-    }
-
-
-}
+		await sendChannel.send({ embeds: [embed] }).catch((error) => {
+			console.error('Failed to send member join log:', error);
+		});
+	},
+};

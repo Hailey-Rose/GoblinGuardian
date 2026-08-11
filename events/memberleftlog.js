@@ -1,35 +1,28 @@
-const { AuditLogEvent, Events, EmbedBuilder, GuildMember } = require('discord.js');
-const { genLogs } = require('../config.json');
-const ms = require('ms');
+const { Events, EmbedBuilder } = require('discord.js');
+const { getGuildChannel, getGuildSetup } = require('../utils/guildsetup');
 
 module.exports = {
-    name: Events.GuildMemberRemove,
-    async execute(GuildMemberRemove, Member) {
+	name: Events.GuildMemberRemove,
+	async execute(member) {
+		const setup = await getGuildSetup(member.guild.id).catch((error) => {
+			console.error('Failed to read guild setup:', error);
+			return null;
+		});
+		const sendChannel = await getGuildChannel(member.guild, setup?.genLogs);
+		if (!sendChannel) return;
 
-        const sendChannel = await GuildMemberRemove.guild.channels.fetch(genLogs).catch((error) => {
-            console.error(`Failed to fetch General log channel ${genLogs}:`, error);
-            return null;
-        });
+		const updateTime = `<t:${Math.floor(Date.now() / 1000)}:R>`;
+		const embed = new EmbedBuilder()
+			.setColor('Blurple')
+			.setTitle('Member Left')
+			.setDescription(`Member left ${updateTime}`)
+			.addFields(
+				{ name: 'User', value: `${member.user} || ${member.user.tag}` },
+				{ name: 'User ID', value: member.id },
+			);
 
-        const updateTime = `<t:${Math.floor(Date.now() / 1000)}:R>`;
-        
-        const memberLeft = GuildMemberRemove;
-
-        const userId = `${GuildMemberRemove.id}`;
-
-        const Left = new EmbedBuilder()
-            .setColor('Blurple')
-            .setTitle('Member Left')
-            .setDescription(`Member Left ${updateTime}`)
-            .addFields(
-                { name: 'User', value: `${GuildMemberRemove.user} || ${GuildMemberRemove.user.tag}`},
-                { name: 'User Id:', value: `${GuildMemberRemove.id}`}, );
-
-        if (!sendChannel?.isTextBased()) return;
-
-        await sendChannel.send({ embeds: [Left] });
-
-    }
-
-
-}
+		await sendChannel.send({ embeds: [embed] }).catch((error) => {
+			console.error('Failed to send member leave log:', error);
+		});
+	},
+};

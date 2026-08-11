@@ -4,9 +4,8 @@ const {
 	PermissionsBitField,
 	EmbedBuilder,
 	MessageFlags,
-	Message,
 } = require('discord.js');
-const { modLogs } = require('../config.json');
+const { getGuildChannel, getGuildSetup } = require('../utils/guildsetup');
 
 module.exports = {
 	data: new SlashCommandBuilder()
@@ -23,15 +22,35 @@ module.exports = {
 			option
 				.setName('reason')
 				.setDescription('Reason for the ban.')
+				.setMinLength(1)
+				.setMaxLength(500)
 				.setRequired(true),
 		),
 
 	async execute(interaction) {
 		if (!interaction.isChatInputCommand()) return;
 
+		if (!interaction.guildId || !interaction.guild) {
+			return interaction.reply({
+				content: 'This command can only be used in a server.',
+				flags: MessageFlags.Ephemeral,
+			});
+		}
+
+		const guildName = interaction.guild.name;
+
+		let setup;
+		try {
+			setup = await getGuildSetup(interaction.guildId);
+		} catch (error) {
+			console.error('Failed to read guild setup:', error);
+			return interaction.reply({
+				content: 'There was an error reading this server\'s setup.',
+				flags: MessageFlags.Ephemeral,
+			});
+		}
 		const user = interaction.options.getUser('user');
 		const reason = interaction.options.getString('reason');
-		const guildName = await interaction.guild.name
 		if (!interaction.memberPermissions.has(PermissionsBitField.Flags.BanMembers)) {
 			return interaction.reply({
 				content: 'You need the **Ban Members** permission to use this command.',
@@ -70,19 +89,23 @@ module.exports = {
 			.setDescription(`You have been banned from **${guildName}** | **Reason:** ${reason}`);
 
 		const dmSent = await user.send({ embeds: [banDm] }).then(() => true).catch(() => false);
-		await interaction.guild.members.ban(user, {deleteMessageSeconds: 60 * 60 * 24 * 7}, { reason });
+		await interaction.guild.members.ban(user, { deleteMessageSeconds: 60 * 60 * 24 * 7, reason });
 		
 		await interaction.followUp({
 			content: `✅ Banned **${user.tag}**.\nReason: **${reason}**${dmSent ? '' : '\n⚠️ I could not DM this user.'}`,
 		});
 
-		const logChannel = await interaction.client.channels.fetch(modLogs).catch(() => null);
-		if (logChannel?.isTextBased()) {
-			await logChannel.send(
-				`**Moderator:** ${interaction.user.tag}\n` +
-				`**Banned User:** ${user.tag} (${user.id})\n` +
-				`**Reason:** ${reason}`,
-			);
+		const logChannel = await getGuildChannel(interaction.guild, setup?.modLogs);
+		if (logChannel) {
+			try {
+				await logChannel.send(
+					`**Moderator:** ${interaction.user.tag}\n` +
+					`**Banned User:** ${user.tag} (${user.id})\n` +
+					`**Reason:** ${reason}`,
+				);
+			} catch (error) {
+				console.error('Failed to send ban log:', error);
+			}
 		}
 	},
 };

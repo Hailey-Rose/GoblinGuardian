@@ -1,5 +1,5 @@
 const { REST, Routes } = require('discord.js');
-const { clientId, token, guildName } = require('./config.json');
+const { clientId, token } = require('./config.json');
 const fs = require('node:fs');
 const path = require('node:path');
 
@@ -33,7 +33,7 @@ const rest = new REST().setToken(token);
 
 async function deployCommands() {
 	try {
-		// The put method is used to fully refresh all commands in the guild with the current set
+		// Global commands are available in every guild where the bot is installed.
 		const data = await rest.put(Routes.applicationCommands(clientId), { body: commands });
 
 		console.log(`Deployed ${data.length} command(s): ${data.map((command) => `/${command.name}`).join(', ') || 'none'}`);

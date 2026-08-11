@@ -1,9 +1,4 @@
 {
   "token": "Bot Token Here",
-  "clientId": "Application ID Here",
-  "guildId": "Server ID Here",
-  "guildName": "Server Name Here",
-  "modLogs": "Moderator Log Channel ID Here",
-  "mutedRole": "Muted Role ID Here",
-  "msgLogs": "Message Log Channel ID Here"
+  "clientId": "Application ID Here"
 }

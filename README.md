@@ -1,18 +1,18 @@
 # GoblinGuardian
-Locally hosted Discord Moderation Bot.
+Locally hosted Discord moderation bot.
 
-Set up instructions:
+## setup
 
-You will need to create a bot application at:  https://discord.com/developers/home
+1. create a bot application at https://discord.com/developers/home.
+2. copy `exampleconfig.json` to `config.json` and add the bot token and application id.
+3. invite the bot to every server where it should run, with the required scopes and permissions.
+4. run `npm install`, then `npm start`.
+5. in each server, run `/setup` with that server's channel and muted-role ids:
+   - `modlog`: moderation action and role-change logs.
+   - `msglog`: message edit and deletion logs.
+   - `genlog`: member join and leave logs.
+   - `mutedrole`: role used by `/mute`.
 
-This is where you will get your bot token / application ID for config.json
+all server settings are stored separately by guild id. `setupids.json`, `warns.json`, and `data/mutes.json` are created or updated automatically.
 
-Give it bot scope, and the needed scopes and permissions from the Oauth2 tab.
-Invite it to your server.
-
-Rename exampleconfig.json to config.json , and add the needed info shown in the example file. 
-create a warns.json file. 
-open the folder in your terminal, install nodeJs / run npm install (check specific requirements for your system). 
-Finally, run `npm start` 
-
-Happy days!
+global slash-command updates can take time to appear in discord. use `/setup` once per server after the commands become available.

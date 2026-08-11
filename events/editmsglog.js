@@ -1,18 +1,20 @@
-const { Events, EmbedBuilder, MessageActivityType } = require('discord.js');
-const { msgLogs } = require('../config.json');
+const { Events, EmbedBuilder } = require('discord.js');
+const { getGuildChannel, getGuildSetup } = require('../utils/guildsetup');
+const { truncateText } = require('../utils/text');
 
 module.exports = {
 	name: Events.MessageUpdate,
-	async execute(oldMessage, newMessage, message) {
-                
-		const sendChannel = await newMessage.guild.channels.fetch(msgLogs).catch((error) => {
-			console.error(`Failed to fetch message log channel ${msgLogs}:`, error);
+	async execute(oldMessage, newMessage) {
+		if (!newMessage.guild || newMessage.author?.bot) return;
+
+		const setup = await getGuildSetup(newMessage.guild.id).catch((error) => {
+			console.error('Failed to read guild setup:', error);
 			return null;
 		});
-        if (newMessage.author.bot) return;
-		if (!sendChannel?.isTextBased()) return;
+		const sendChannel = await getGuildChannel(newMessage.guild, setup?.msgLogs);
+		if (!sendChannel) return;
 
-		const attachments = [newMessage.attachments.values()].map((attachment) => attachment.url);
+		const attachments = [...newMessage.attachments.values()].map((attachment) => attachment.url);
 		const author = newMessage.author;
 		const editTime = `<t:${Math.floor(Date.now() / 1000)}:R>`;
 
@@ -21,12 +23,14 @@ module.exports = {
 			.setTitle('Message Edited')
 			.setDescription(`This message was edited ${editTime}.`)
 			.addFields(
-				{ name: 'Before:', value: `> ${oldMessage.content || 'No message content'}` },
-                { name: 'After:', value: `> ${newMessage.content || 'No message content'}` },
+				{ name: 'Before:', value: `> ${truncateText(oldMessage.content || 'No message content', 1021)}` },
+				{ name: 'After:', value: `> ${truncateText(newMessage.content || 'No message content', 1021)}` },
 				{ name: 'Message Author', value: author ? `> \`${author.username} (${author.id})\`` : '> Unknown author' },
 				{ name: 'Message Channel', value: `> ${oldMessage.channel} (${oldMessage.channel.id})` },
-			);        
+			);
 
-		await sendChannel.send({ embeds: [edited] });
+		await sendChannel.send({ embeds: [edited] }).catch((error) => {
+			console.error('Failed to send edited message log:', error);
+		});
 	},
 };

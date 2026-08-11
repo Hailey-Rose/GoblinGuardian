@@ -6,7 +6,7 @@
   "scripts": {
     "start": "node start.js",
     "deploy": "node deploy-commands.js",
-    "test": "node --check start.js && node --check index.js && node --check deploy-commands.js && node --check events/deletemsglog.js && node --check events/muterolecleanup.js && node --check events/rolechangelog.js && node --check utils/mutes.js && node --check commands/utility/ping.js && node --check commands/ban.js && node --check commands/kick.js && node --check commands/mute.js"
+    "test": "node --check start.js && node --check index.js && node --check deploy-commands.js && node --check commands/ban.js && node --check commands/kick.js && node --check commands/mute.js && node --check commands/setup.js && node --check commands/setmodlog.js && node --check commands/warn.js && node --check commands/totalwarns.js && node --check commands/utility/ping.js && node --check events/deletemsglog.js && node --check events/editmsglog.js && node --check events/memberleftlog.js && node --check events/muterolecleanup.js && node --check events/newjoinlog.js && node --check events/rolechangelog.js && node --check utils/guildsetup.js && node --check utils/json.js && node --check utils/mutes.js && node --check utils/text.js && node --test test/multiguild.test.js"
   },
   "repository": {
     "type": "git",
