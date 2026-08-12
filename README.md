@@ -1,7 +1,10 @@
 # GoblinGuardian
-Locally hosted Discord moderation bot.
+Locally hosted, open source Discord moderation bot. No personal data is stored beyond Discord user IDs, Channel IDs and Server IDs (when required, plesae check Privacy Policy for more information.)
 
-## setup
+## Add to your server: [Bot invite](https://discord.com/oauth2/authorize?client_id=1523741922034712576&permissions=6756896736537686&response_type=code&redirect_uri=https%3A%2F%2Fdiscord.com&integration_type=0&scope=bot+guilds.members.read+messages.read)
+
+
+## How to setup Goblin Guardian as your own bot:
 
 1. create a bot application at https://discord.com/developers/home.
 2. copy `exampleconfig.json` to `config.json` and add the bot token and application id.
